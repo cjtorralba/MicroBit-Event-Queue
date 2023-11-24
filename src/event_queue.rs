@@ -8,6 +8,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use embedded_alloc::Heap;
 use microbit::hal::Timer;
+use microbit::hal::pac::SYST;
 
 use crate::events::Event;
 
@@ -22,63 +23,42 @@ pub struct Queue<T> {
 }
 
 
-pub struct EventQueue<T, U> {
 
-    /// Queue of events FIFO
-    events: Queue<T>,
+/// Contains an enum `Event` with a corresponding timing `u32`
+pub struct TimedEvent {
+    event: Event,
+    timing: u32,
+}
 
-    /// time unit corresponding to the time of each event,
-    timing: Queue<U>,
+
+
+struct TimedEventQueue {
+    queue: Queue<TimedEvent>,
+    rtc: Rtc,
+
+}
+
+impl TimedEventQueue {
+
 }
 
 
 
 
-impl EventQueue<Event, u32> {
+impl TimedEvent {
 
 
-    /// Default constructor for EventQueue struct,
-    /// Calls `default` constructor for the Queue struct
-    pub fn default() -> Self {
-        EventQueue{
-            events: Queue::default(),
-            timing: Queue::default(),
+    pub fn new(event: Event) -> Self {
+
+
+        TimedEvent {
+            event,
+            timing: 0,
         }
+
     }
 
 
-    ///
-    pub fn new(events: Queue<Event>, timing: Queue<u32>) -> Self {
-        EventQueue{
-            events,
-            timing,
-        }
-    }
-
-
-    pub fn enqueue(&mut self, event: Event, time: u32) {
-        self.events.enqueue(event);
-        self.timing.enqueue(time);
-    }
-
-    pub fn dequeue(&mut self) {
-        self.events.dequeue();
-        self.timing.dequeue();
-    }
-
-
-
-    /// Returns the set of `Event` and `Timing` for corresponding index
-    pub fn get(&self, index: usize) -> Option<(&Event, &u32)> {
-        let event_option: &Option<&Event>= &self.events.get(index);
-        let timing_option: &Option<&u32> = &self.timing.get(index);
-
-        if event_option.is_some() && timing_option.is_some() {
-            Some((event_option.unwrap(), timing_option.unwrap()))
-        } else {
-            None
-        }
-    }
 
 
 
@@ -88,12 +68,16 @@ impl EventQueue<Event, u32> {
 
 impl<T> Queue<T> {
 
+
+    /// Produces a new queue from desired Vector
     pub fn new(queue: Vec<T>) -> Self {
         Queue{
             queue,
         }
     }
 
+
+    /// Generates a default queue, allocates a new vector
     pub fn default() -> Self {
         Queue{
             queue: Vec::new(),
