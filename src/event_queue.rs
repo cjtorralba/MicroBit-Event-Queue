@@ -1,20 +1,13 @@
-///
-
-
-
-
-
 extern crate alloc;
+
 use alloc::vec::Vec;
-use embedded_alloc::Heap;
-use microbit::hal::Timer;
-use microbit::hal::pac::SYST;
+
+use microbit::hal::{Rtc, rtc};
 
 use crate::events::Event;
 
-
-
 /// Basic Queue structure, consists of a Vec which we will use as our "queue"
+#[derive(Clone, Debug)]
 pub struct Queue<T> {
 
     /// Main part of the queue, `queue.get(0)` will be the most recently added item.
@@ -25,20 +18,61 @@ pub struct Queue<T> {
 
 
 /// Contains an enum `Event` with a corresponding timing `u32`
+#[derive(Clone, Debug)]
 pub struct TimedEvent {
     event: Event,
     timing: u32,
 }
 
 
-
-struct TimedEventQueue {
+/// This struct contains a [Queue] of [TimedEvents](TimedEvent), as well as an RTC<T> counter where T
+/// is an [rtc::Instance]
+pub struct TimedEventQueue<T> {
     queue: Queue<TimedEvent>,
-    rtc: Rtc,
-
+    rtc: Rtc<T>,
 }
 
-impl TimedEventQueue {
+
+
+
+impl<T: rtc::Instance> TimedEventQueue<T> {
+
+
+    /// Creates a new [TimedEVentQueue] and both clears and enables the RTC counter
+    pub fn new(rtc: Rtc<T>) -> Self {
+
+        // Clear current counter value, need to reset since we are initializing new TimedEventQueue
+        rtc.clear_counter();
+
+        // Starting counter back up from 0
+        rtc.enable_counter();
+        TimedEventQueue {
+            queue: Queue::default(),
+            rtc,
+        }
+    }
+
+
+    /// Adds an [Event] to the queue.
+    /// Uses current time on rtc via get_counter method in [nrf_hal_common::rtc]
+    pub fn add_event(&mut self, event: Event) {
+        let timing = self.rtc.get_counter();
+        self.queue.enqueue(TimedEvent::new(event.clone(), timing));
+    }
+
+
+
+    /// ### Returns
+    /// - [Option]<&[TimedEvent]>
+    ///
+    /// ### Arguments:
+    /// - index: [usize]
+    ///     - Index you with to get the timed event from in the queue
+    pub fn get_event(&self, index: usize) -> Option<&TimedEvent> {
+        self.queue.get(index)
+    }
+
+
 
 }
 
@@ -47,21 +81,18 @@ impl TimedEventQueue {
 
 impl TimedEvent {
 
-
-    pub fn new(event: Event) -> Self {
-
-
+    /// ### Returns:
+    /// - [Self](TimedEvent)
+    ///
+    /// ### Arguments:
+    /// - event: [Event]
+    /// - timing: [u32]
+    pub fn new(event: Event, timing: u32) -> Self {
         TimedEvent {
             event,
-            timing: 0,
+            timing,
         }
-
     }
-
-
-
-
-
 }
 
 
@@ -69,7 +100,7 @@ impl TimedEvent {
 impl<T> Queue<T> {
 
 
-    /// Produces a new queue from desired Vector
+    /// Produces a new [Queue] from desired [vector]<T> where T is a type parameter
     pub fn new(queue: Vec<T>) -> Self {
         Queue{
             queue,
@@ -77,7 +108,7 @@ impl<T> Queue<T> {
     }
 
 
-    /// Generates a default queue, allocates a new vector
+    /// Generates a default [Queue], allocates a new [vector](Vec)
     pub fn default() -> Self {
         Queue{
             queue: Vec::new(),
@@ -86,6 +117,9 @@ impl<T> Queue<T> {
 
 
     /// Adds an item to the front of the queue
+    ///
+    /// ### Arguments:
+    ///     item: T
     ///
     /// ### Example:
     /// ```rs
@@ -145,10 +179,22 @@ impl<T> Queue<T> {
     }
 
 
+    /// ### Returns:
+    /// - `Option<&T>`
+    ///
+    /// Returns first item in the queue
     pub fn peek(&self) -> Option<&T> {
         self.queue.first()
     }
 
+
+    /// ### Returns:
+    /// - `Option<&T>`
+    ///
+    /// ### Arguments:
+    /// - index: usize
+    ///
+    /// Returns given item based off index
     pub fn get(&self, index: usize) -> Option<&T> {
         self.queue.get(index)
     }

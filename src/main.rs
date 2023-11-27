@@ -22,13 +22,10 @@ use microbit::{
         twim,
         prelude::*,
     },
-    pac::{self, interrupt},
 
-    pac::twi0::frequency::FREQUENCY_A,
 };
 
 
-use nrf52833_hal::rtc::{Rtc, RtcInterrupt};
 
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
@@ -37,12 +34,12 @@ use embedded_graphics::{
     text::{Baseline, Text},
 };
 use microbit::hal::timer;
-use microbit::pac::Interrupt::RTC1;
-use nrf52833_hal::pac::RTC0;
+use microbit::hal::Rtc;
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 use ssd1306::command::Command;
 
 use crate::event_queue::*;
+use crate::events::{Button, Event};
 
 
 #[global_allocator]
@@ -72,7 +69,6 @@ fn main() -> ! {
 
     rtt_init_print!();
 
-    Rtc::new(RTC0::PTR, 1).unwrap();
 
 
     /*
@@ -97,7 +93,10 @@ fn main() -> ! {
     let mut button_a = board.buttons.button_a.into_floating_input();
     let mut button_b = board.buttons.button_b.into_floating_input();
 
-    let rtc = board.RTC0;
+    let rtc = Rtc::new(board.RTC0, 33).unwrap();
+
+    let mut event_queue = TimedEventQueue::new(rtc);
+
 
 
 
@@ -105,10 +104,6 @@ fn main() -> ! {
 
 
     loop {
-
-        if button_a.is_low().unwrap() {
-            rprintln!("Button a pressed");
-        }
 
 
 
