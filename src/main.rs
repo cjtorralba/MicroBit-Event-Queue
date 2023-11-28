@@ -33,6 +33,7 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
+use microbit::hal::gpio::Level;
 use microbit::hal::timer;
 use microbit::hal::Rtc;
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
@@ -90,7 +91,7 @@ fn main() -> ! {
 
 
 
-    let mut button_a = board.buttons.button_a.into_floating_input();
+    let mut button_a = board.buttons.button_a.into_push_pull_output(Level::Low);
     let mut button_b = board.buttons.button_b.into_floating_input();
 
     let rtc = Rtc::new(board.RTC0, 33).unwrap();
@@ -105,6 +106,13 @@ fn main() -> ! {
 
     loop {
 
+        if button_a.is_set_low().unwrap(){
+            rprintln!("Button a low");
+        }
+
+        if button_a.is_set_high().unwrap(){
+            rprintln!("Button a high");
+        }
 
 
     }
