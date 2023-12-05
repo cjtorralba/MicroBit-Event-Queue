@@ -20,8 +20,8 @@ pub struct Queue<T> {
 /// Contains an enum `Event` with a corresponding timing `u32`
 #[derive(Clone, Debug)]
 pub struct TimedEvent {
-    event: Event,
-    timing: u32,
+    pub event: Event,
+    pub timing: u32,
 }
 
 
@@ -73,6 +73,21 @@ impl<T: rtc::Instance> TimedEventQueue<T> {
     }
 
 
+    /// Returns the total number of events *currently* in the queue
+    /// ### Returns
+    /// - [usize]
+    pub fn total_events(&self) -> usize {
+        self.queue.size()
+    }
+
+
+    /// ### Returns:
+    /// - [Option]<&[TimedEvent]>
+    ///
+    /// Peeks the most recently added TimedEvent to the queue
+    pub fn peek(&self) -> Option<&TimedEvent> {
+        self.queue.peek()
+    }
 
 }
 
