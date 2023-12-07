@@ -1,12 +1,14 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use core::fmt;
+use core::fmt::{Formatter, Write};
 
 use microbit::hal::{Rtc, rtc};
 
 use crate::events::Event;
 
-/// Basic Queue structure, consists of a Vec which we will use as our "queue"
+/// Basic Queue structure, consists of a [Vec] which we will use as our "queue"
 #[derive(Clone, Debug)]
 pub struct Queue<T> {
 
@@ -24,6 +26,14 @@ pub struct TimedEvent {
     pub timing: u32,
 }
 
+impl fmt::Display for TimedEvent {
+
+    /// Basic implementation for Display in [TimedEvent]
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Event: {}, Timing: {}\n", self.event, self.timing)
+    }
+}
+
 
 /// This struct contains a [Queue] of [TimedEvents](TimedEvent), as well as an RTC<T> counter where T
 /// is an [rtc::Instance]
@@ -31,8 +41,6 @@ pub struct TimedEventQueue<T> {
     queue: Queue<TimedEvent>,
     rtc: Rtc<T>,
 }
-
-
 
 
 impl<T: rtc::Instance> TimedEventQueue<T> {
@@ -60,6 +68,15 @@ impl<T: rtc::Instance> TimedEventQueue<T> {
         self.queue.enqueue(TimedEvent::new(event.clone(), timing));
     }
 
+
+
+    /// ### Returns:
+    /// - [Option]<&[TimedEvent]>
+    ///
+    /// Returns the most recently added event if there is one to return
+    pub fn get_most_recent_event(&self) -> Option<&TimedEvent> {
+        self.queue.get(self.queue.size() - 1)
+    }
 
 
     /// ### Returns
@@ -109,6 +126,11 @@ impl TimedEvent {
         }
     }
 }
+
+
+
+
+
 
 
 
