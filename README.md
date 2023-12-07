@@ -7,31 +7,21 @@ Authors: Christian Torralba, Barton Massey
 A quick intro to this to just keep track of user interaction with the microbit. This means button presses, microphone pickup etc.
 The program will keep track of the event and when it occurred using a timer.
 
-#### Example usage (subject to change)
-
-```rust
-
-/// Aquire board, we will need this to reach our RTC
-let board = Board::take().unwrap();
+Currently, there are 3 events you can keep track of, button a, b and the touchpad.
 
 
-/// Create a new RTC of your choice, with the scalar of your choice
-let scalar: u32 = 33;
-let rtc = Rtc::new(board.RTC0, scalar).unwrap();
+#### Thought process:
+Learning to work with lower level things like events and interrupts was a real challenge for me. Especially the interrupt handler.
+I had been so used to not having global variables, it felt strange at first. The same goes for working with peripherals, the buttons and microphone.
+
+It was very fun to get to work with the `pac` and the `hal` crate, they provided me with much needed into about all the different 
+peripherals and hardware I could use.
 
 
-/// Create event queue
-let mut event_queue = TimedEventQueue::new(rtc);
+#### Future use:
+I see this integrating decently well with other time-based projects with minimal changes. I plan on making something akin to 
+a chess clock. Or any other things that have to use a timer.
 
-
-/// Begin adding your events
-loop {
-
-// pseudocode
- if buttonAPressed {
-    event_queue.add_event(Event::ButtonPress(Button::ButtonA));
-    }
-
-}
-
-```
+#### Overview
+While a tad bit overwhelming, once I got semi-used to the program flow and how you can use each peripheral, as well as events and channels,
+things started coming together. There is still plenty I want to do with this project but as of now it is a small demo.
